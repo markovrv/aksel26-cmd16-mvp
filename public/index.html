@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#090b13">
+  <title>Маршрутка — промышленный квест</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#home" data-nav="home" aria-label="Маршрутка, на главную">
+      <span class="brand-mark">
+        <span class="brand-mouth"></span>
+      </span>
+      <span>
+        <b>МАРШРУТКА</b>
+        <small>ПРОМЫШЛЕННЫЙ КВЕСТ</small>
+      </span>
+    </a>
+
+    <nav class="main-nav" aria-label="Основная навигация">
+      <button class="nav-link active" data-nav="home">Главная</button>
+      <button class="nav-link" data-nav="route">Маршрут</button>
+      <button class="nav-link" data-nav="market">Маркет</button>
+      <button class="nav-link" data-nav="profile">Профиль</button>
+    </nav>
+
+    <div class="status-panel">
+      <div class="score-chip" title="Накопленные баллы">
+        <span class="coin"></span>
+        <strong id="scoreValue">0</strong>
+      </div>
+      <button class="avatar-chip" id="profileButton" aria-label="Открыть профиль">
+        <span class="mini-avatar" id="miniAvatar"></span>
+        <span id="profileName">Гость</span>
+      </button>
+      <button class="menu-button" id="menuButton" aria-label="Открыть меню">MENU</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="screen active" id="homeScreen">
+      <div class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="live-dot"></span> ПРОФОРИЕНТАЦИЯ НОВОГО УРОВНЯ</div>
+          <h1>Найди свой путь<br><span>в индустрии</span></h1>
+          <p class="hero-lead">Пройди тест, собери аватар и исследуй предприятия Кировской области. Твой маршрут закончится идеей бизнеса или понятным планом карьеры.</p>
+
+          <div class="hero-actions">
+            <button class="button button-primary" id="startButton">
+              <span>Начать квест</span>
+              <span class="button-arrow">→</span>
+            </button>
+            <button class="button button-ghost" data-nav="route">Смотреть карту</button>
+          </div>
+
+          <div class="hero-stats">
+            <div><strong>06</strong><span>станций маршрута</span></div>
+            <div><strong>24</strong><span>интерактивных блока</span></div>
+            <div><strong>01</strong><span>персональный финал</span></div>
+          </div>
+        </div>
+
+        <div class="hero-visual" aria-label="Схема промышленного маршрута">
+          <div class="radar">
+            <div class="radar-ring ring-one"></div>
+            <div class="radar-ring ring-two"></div>
+            <div class="radar-ring ring-three"></div>
+            <div class="radar-sweep"></div>
+            <div class="radar-core">
+              <span class="route-avatar" id="heroAvatar"></span>
+            </div>
+            <span class="orbit-dot dot-a"></span>
+            <span class="orbit-dot dot-b"></span>
+            <span class="orbit-dot dot-c"></span>
+          </div>
+          <div class="floating-card card-top">
+            <small>ТВОЙ ТРЕК</small>
+            <b id="heroTrack">ЕЩЁ НЕ ОПРЕДЕЛЁН</b>
+          </div>
+          <div class="floating-card card-bottom">
+            <small>СЛЕДУЮЩАЯ СТАНЦИЯ</small>
+            <b id="nextStation">ПРОЙДИ ДИАГНОСТИКУ</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="ticker" aria-hidden="true">
+        <div class="ticker-track">
+          <span>ТЕХНОЛОГИИ</span><i></i><span>ПРОИЗВОДСТВО</span><i></i><span>КАРЬЕРА</span><i></i><span>БИЗНЕС</span><i></i>
+          <span>ТЕХНОЛОГИИ</span><i></i><span>ПРОИЗВОДСТВО</span><i></i><span>КАРЬЕРА</span><i></i><span>БИЗНЕС</span><i></i>
+        </div>
+      </div>
+
+      <section class="section-wrap how-section">
+        <div class="section-heading">
+          <span>КАК ЭТО РАБОТАЕТ</span>
+          <h2>Четыре шага до своего маршрута</h2>
+        </div>
+        <div class="steps-grid">
+          <article class="step-card">
+            <div class="step-index">01</div>
+            <div class="step-icon test-icon"></div>
+            <h3>Диагностика</h3>
+            <p>Ответь на 7 вопросов. Алгоритм определит, где твои сильные стороны: в создании проектов или развитии внутри команды.</p>
+          </article>
+          <article class="step-card">
+            <div class="step-index">02</div>
+            <div class="step-icon avatar-icon"></div>
+            <h3>Аватар</h3>
+            <p>Собери цифрового героя: выбери образ, цвет и экипировку для прохождения промышленного маршрута.</p>
+          </article>
+          <article class="step-card">
+            <div class="step-index">03</div>
+            <div class="step-icon map-icon"></div>
+            <h3>Предприятия</h3>
+            <p>Открывай станции, изучай продукты и профессии, выполняй задания и накапливай энергию маршрута.</p>
+          </article>
+          <article class="step-card featured">
+            <div class="step-index">04</div>
+            <div class="step-icon finish-icon"></div>
+            <h3>Твой результат</h3>
+            <p>Получи идею технологического проекта или карьерную карту с конкретными следующими шагами.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-wrap demo-route">
+        <div class="section-heading split">
+          <div>
+            <span>КАРТА РЕГИОНА</span>
+            <h2>Предприятия как игровые станции</h2>
+          </div>
+          <button class="text-link" data-nav="route">Открыть весь маршрут →</button>
+        </div>
+        <div class="mini-route" id="miniRoute"></div>
+      </section>
+    </section>
+
+    <section class="screen route-screen" id="routeScreen">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow"><span class="live-dot"></span> МАРШРУТ АКТИВЕН</div>
+          <h1>Карта предприятий</h1>
+          <p>Каждая станция состоит из четырёх частей. Пройди их по порядку, чтобы открыть следующую.</p>
+        </div>
+        <div class="route-summary">
+          <div class="progress-ring" id="progressRing"><span id="progressPercent">0%</span></div>
+          <div><small>ОБЩИЙ ПРОГРЕСС</small><strong id="routeProgressText">0 из 6 станций</strong></div>
+        </div>
+      </div>
+
+      <div class="route-layout">
+        <aside class="mission-panel">
+          <small>ТЕКУЩАЯ МИССИЯ</small>
+          <h3 id="missionTitle">Пройди диагностику</h3>
+          <p id="missionText">Ответь на вопросы, чтобы открыть персональный маршрут.</p>
+          <button class="button button-primary compact" id="missionButton">Начать</button>
+          <div class="mission-divider"></div>
+          <small>ТВОЙ ТРЕК</small>
+          <div class="track-badge" id="routeTrackBadge">Не определён</div>
+          <small>НАВЫКИ</small>
+          <div class="skill-bars" id="skillBars">
+            <div><span>Инициатива</span><i><b style="width: 20%"></b></i></div>
+            <div><span>Аналитика</span><i><b style="width: 20%"></b></i></div>
+            <div><span>Командность</span><i><b style="width: 20%"></b></i></div>
+          </div>
+        </aside>
+
+        <div class="route-map-wrap">
+          <div class="route-map" id="routeMap"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen market-screen" id="marketScreen">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow"><span class="live-dot"></span> МАРКЕТ НАГРАД</div>
+          <h1>Обменяй энергию на впечатления</h1>
+          <p>Демо-витрина наград. В реальном проекте здесь появятся мерч предприятий и приглашения на экскурсии.</p>
+        </div>
+        <div class="market-balance">
+          <span class="coin large"></span>
+          <div><small>ТВОЙ БАЛАНС</small><strong id="marketBalance">0</strong></div>
+        </div>
+      </div>
+      <div class="market-grid" id="marketGrid"></div>
+    </section>
+
+    <section class="screen profile-screen" id="profileScreen">
+      <div class="profile-layout">
+        <aside class="profile-card">
+          <div class="profile-avatar-stage"><span class="large-avatar" id="profileAvatar"></span></div>
+          <h2 id="profileFullName">Гость маршрута</h2>
+          <p id="profileRole">Создай профиль, чтобы начать</p>
+          <div class="profile-level"><span>УРОВЕНЬ 01</span><i><b id="levelProgress"></b></i></div>
+          <button class="button button-ghost full" id="editAvatarButton">Изменить аватар</button>
+        </aside>
+
+        <div class="profile-main">
+          <div class="profile-hero">
+            <small>ПЕРСОНАЛЬНЫЙ ТРЕК</small>
+            <h1 id="profileTrack">Пока не определён</h1>
+            <p id="profileTrackDescription">Пройди диагностику, и здесь появится твоя персональная рекомендация.</p>
+            <button class="button button-primary compact" id="profileAction">Пройти диагностику</button>
+          </div>
+          <div class="profile-metrics">
+            <article><small>БАЛЛЫ</small><strong id="profileScore">0</strong><span>энергии накоплено</span></article>
+            <article><small>СТАНЦИИ</small><strong id="profileStations">0/6</strong><span>предприятий пройдено</span></article>
+            <article><small>ЭКСКУРСИИ</small><strong id="profileTours">0</strong><span>заявок отправлено</span></article>
+          </div>
+          <div class="portfolio-card">
+            <div>
+              <small>ЦИФРОВОЕ ПОРТФОЛИО</small>
+              <h3>Твои достижения и итоговый маршрут</h3>
+            </div>
+            <div class="achievement-row" id="achievementRow"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="brand footer-brand">
+      <span class="brand-mark"><span class="brand-mouth"></span></span>
+      <span><b>МАРШРУТКА</b><small>ДЕМО-КОНЦЕПТ MVP</small></span>
+    </div>
+    <p>Промышленный квест для школьников и студентов Кировской области</p>
+    <span>2026</span>
+  </footer>
+
+  <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
+    <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"></div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

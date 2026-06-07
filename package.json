@@ -1,0 +1,15 @@
+{
+  "name": "marshrutka-industrial-career-mvp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Industrial career guidance quest for students",
+  "type": "module",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --check public/app.js && node --check server/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
