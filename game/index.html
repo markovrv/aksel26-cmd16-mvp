@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Выберем профессию — Образовательная 3D-игра</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet" />
+	<link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+	<!-- Three.js Canvas -->
+	<canvas id="game-canvas"></canvas>
+
+	<!-- Fade Overlay -->
+	<div id="fade-overlay"></div>
+
+	<!-- Loading Screen -->
+	<div id="loading-screen" class="screen">
+		<div class="loading-content">
+			<div class="loading-spinner"></div>
+			<h2>Загрузка...</h2>
+			<p id="loading-progress">Подготовка сцены</p>
+		</div>
+	</div>
+
+	<!-- ENTRY SCREEN (Сцена 0) -->
+	<div id="entry-screen" class="screen hidden">
+		<div class="start-content">
+			<h1 class="game-title">🏗️ Выберем профессию</h1>
+			<p class="game-subtitle">Профориентационный 3D-симулятор для школьников</p>
+
+			<div class="name-input-container">
+				<label for="player-name">Как тебя зовут?</label>
+				<input type="text" id="player-name" placeholder="Например: Саша" maxlength="20" autocomplete="off" />
+			</div>
+
+			<div class="avatar-selector">
+				<p>Выбери аватар:</p>
+				<div class="avatar-options">
+					<div class="avatar-option selected" data-avatar="👷">👷</div>
+					<div class="avatar-option" data-avatar="⚡">⚡</div>
+					<div class="avatar-option" data-avatar="🔧">🔧</div>
+					<div class="avatar-option" data-avatar="📐">📐</div>
+				</div>
+			</div>
+
+			<button id="start-btn" class="btn btn-primary" disabled>Начать игру →</button>
+		</div>
+	</div>
+
+	<!-- INTRO SCREEN (Сцена 2) -->
+	<div id="intro-screen" class="screen hidden">
+		<div class="intro-content">
+			<div class="intro-left">
+				<canvas id="preview-canvas" width="200" height="200"></canvas>
+			</div>
+			<div class="intro-right">
+				<h2 id="intro-profession-title">Профессия</h2>
+				<div class="intro-duties" id="intro-duties"></div>
+				<div class="intro-meta">
+					<span>⏱ <span id="intro-time">~5 минут</span></span>
+					<span>⭐ Макс. баллов: <span id="intro-max-score">45</span></span>
+				</div>
+				<div class="intro-buttons">
+					<button class="btn btn-secondary" id="intro-back">← Назад</button>
+					<button class="btn btn-primary" id="intro-start">Понятно, начать →</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- HUD -->
+	<div id="hud" class="hidden">
+		<div class="hud-top">
+			<div class="hud-item"><span class="hud-icon">🎓</span><span id="hud-player">Игрок</span></div>
+			<div class="hud-item"><span class="hud-icon">🏢</span><span id="hud-profession">Профессия</span></div>
+			<div class="hud-item"><span class="hud-icon">⭐</span><span id="hud-score">0</span>/55</div>
+			<div class="hud-item"><span class="hud-icon">📋</span>Задача <span id="hud-task">1</span>/3</div>
+			<div class="hud-item timer" id="hud-timer">
+				<span class="hud-icon">⏱️</span>
+				<span id="timer-display">00:00</span>
+			</div>
+		</div>
+
+		<div id="progress-indicators" class="progress-indicators">
+			<div class="progress-item" data-task="1">
+				<div class="progress-circle"></div><span>1</span>
+			</div>
+			<div class="progress-item" data-task="2">
+				<div class="progress-circle"></div><span>2</span>
+			</div>
+			<div class="progress-item" data-task="3">
+				<div class="progress-circle"></div><span>3</span>
+			</div>
+		</div>
+
+		<div id="hint-box" class="hint-box hidden">
+			<span class="hint-icon">💡</span>
+			<span id="hint-text">Подсказка</span>
+		</div>
+
+		<div id="alert-indicator" class="alert-indicator hidden">
+			<span class="alert-icon">⚠️</span><span>ЧП</span>
+		</div>
+	</div>
+
+	<!-- Modal Container -->
+	<div id="modal-container" class="modal-container hidden">
+		<div class="modal-backdrop"></div>
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 id="modal-title">Заголовок</h3>
+				<button class="modal-close" id="modal-close">×</button>
+			</div>
+			<div class="modal-body" id="modal-body"><!-- dynamic --></div>
+			<div class="modal-footer" id="modal-footer"><!-- dynamic --></div>
+		</div>
+	</div>
+
+	<!-- Task Panel (drag-drop) -->
+	<div id="task-panel" class="task-panel hidden">
+		<div class="task-panel-header">
+			<h3>👷 Распределение бригад</h3>
+			<p>Перетащите рабочих в нужные зоны строительства</p>
+		</div>
+		<div class="task-panel-content">
+			<div class="workers-section">
+				<h4>Рабочие</h4>
+				<div id="workers-container" class="workers-container"><!-- workers --></div>
+			</div>
+			<div class="zones-section">
+				<div class="zone" id="zone-foundation" data-zone="foundation">
+					<h4>🏗️ Фундамент</h4>
+					<p>Нужно: 2 рабочих</p>
+					<div class="zone-drop-area"></div>
+				</div>
+				<div class="zone" id="zone-walls" data-zone="walls">
+					<h4>🧱 Стены</h4>
+					<p>Нужно: 3 рабочих</p>
+					<div class="zone-drop-area"></div>
+				</div>
+			</div>
+		</div>
+		<div class="task-panel-footer">
+			<button class="btn btn-secondary" id="cancel-task">Отмена</button>
+			<button class="btn btn-primary" id="confirm-task">Готово ✓</button>
+		</div>
+	</div>
+
+	<!-- Inspection Overlay (Inspector Task 1) -->
+	<div id="inspection-overlay" class="inspection-overlay hidden">
+		<div class="inspection-header">
+			<h3>🔍 РЕЖИМ ОСМОТРА</h3>
+			<span>Обнаружено: <strong id="inspect-counter">0/3</strong></span>
+		</div>
+		<div class="inspection-body">
+			<p>Кликайте по стене — ищите дефекты</p>
+			<div id="inspect-journal" class="inspect-journal"></div>
+		</div>
+		<div class="inspection-footer">
+			<button class="btn btn-primary pulse-green" id="inspect-finish-btn" disabled>📋 ЗАВЕРШИТЬ ОСМОТР</button>
+		</div>
+	</div>
+
+	<!-- Document Check Panel (Inspector Task 2) -->
+	<div id="doc-check-panel" class="doc-check-panel hidden">
+		<div class="doc-panel-header">
+			<h3>📋 ПРОВЕРКА АКТА СКРЫТЫХ РАБОТ</h3>
+			<p>Нажмите на строки с несоответствиями</p>
+		</div>
+		<div class="doc-panel-body">
+			<div class="doc-columns">
+				<div class="doc-col">
+					<h4>АКТ ОТ БРИГАДЫ</h4>
+					<div class="doc-row" data-idx="0"><input type="checkbox" class="doc-radio"><span>Диаметр арматуры: 10 мм</span></div>
+					<div class="doc-row" data-idx="1"><input type="checkbox" class="doc-radio"><span>Шаг армирования: 200 мм</span></div>
+					<div class="doc-row" data-idx="2"><input type="checkbox" class="doc-radio"><span>Марка бетона: М200</span></div>
+					<div class="doc-row" data-idx="3"><input type="checkbox" class="doc-radio"><span>Глубина залегания: 1.2 м</span></div>
+					<div class="doc-row" data-idx="4"><input type="checkbox" class="doc-radio"><span>Подпись прораба: есть</span></div>
+					<div class="doc-row" data-idx="5"><input type="checkbox" class="doc-radio"><span>Подпись КК: —</span></div>
+				</div>
+				<div class="doc-col">
+					<h4>НОРМАТИВ (СНиП 3.03.01)</h4>
+					<div class="doc-row doc-norm"><span>Диаметр арматуры: 12 мм</span></div>
+					<div class="doc-row doc-norm"><span>Шаг армирования: 200 мм ✓</span></div>
+					<div class="doc-row doc-norm"><span>Марка бетона: М300</span></div>
+					<div class="doc-row doc-norm"><span>Глубина залегания: 1.2 м ✓</span></div>
+					<div class="doc-row doc-norm"><span>Подпись прораба: обяз. ✓</span></div>
+					<div class="doc-row doc-norm"><span>Подпись КК: обязательна</span></div>
+				</div>
+			</div>
+			<div class="doc-counter">Отмечено: <strong id="doc-error-count">0</strong>/3</div>
+		</div>
+		<div class="doc-panel-footer">
+			<button class="btn btn-primary" id="doc-confirm-btn" disabled>📋 ПОДГОТОВИТЬ ЗАКЛЮЧЕНИЕ</button>
+		</div>
+	</div>
+
+	<!-- Scene Instructions Overlay -->
+	<div id="scene-instructions" class="scene-instructions hidden">
+		<div class="instruction-content">
+			<h3 id="instruction-title">Инструкция</h3>
+			<p id="instruction-text">Описание задачи</p>
+			<button class="btn btn-primary" id="instruction-btn">Понятно!</button>
+		</div>
+	</div>
+
+	<!-- Click Hint -->
+	<div id="click-hint" class="click-hint hidden">
+		<div class="click-hint-icon">👆</div>
+		<div class="click-hint-text" id="click-hint-text">Нажмите на объект</div>
+	</div>
+
+	<!-- Toast Container -->
+	<div id="toast-container" class="toast-container"></div>
+
+	<!-- Results Screen -->
+	<div id="results-screen" class="screen hidden">
+		<div class="results-content">
+			<div class="confetti-container" id="confetti-container"></div>
+			<h1 class="results-title">Результаты</h1>
+			<div class="results-score">
+				<span class="score-label">Ваш результат:</span>
+				<span class="score-value" id="final-score">0</span>
+				<span class="score-max">/ 55</span>
+			</div>
+			<div class="results-skills">
+				<h3>Оценённые навыки</h3>
+				<div class="skill-row">
+					<span class="skill-name">Организаторские способности</span>
+					<div class="skill-stars">
+						<span class="star">⭐</span>
+						<span class="star">⭐</span>
+						<span class="star">⭐</span>
+					</div>
+				</div>
+				<div class="skill-row">
+					<span class="skill-name">Принятие решений</span>
+					<div class="skill-stars">
+						<span class="star">⭐</span>
+						<span class="star">⭐</span>
+						<span class="star">⭐</span>
+					</div>
+				</div>
+				<div class="skill-row">
+					<span class="skill-name">Управление временем</span>
+					<div class="skill-stars">
+						<span class="star">⭐</span>
+						<span class="star">⭐</span>
+						<span class="star">⭐</span>
+					</div>
+				</div>
+			</div>
+			<div class="results-achievements" id="achievements-container">
+				<h3>🏆 Достижения</h3>
+				<div class="achievements-grid"><!-- dynamic --></div>
+			</div>
+			<div class="results-time">
+				<span>⏱️ Время прохождения: </span>
+				<span id="final-time">00:00</span>
+			</div>
+			<div class="results-actions">
+				<button class="btn btn-secondary" id="btn-retry"><span>🔄</span> Играть снова</button>
+				<button class="btn btn-secondary" id="btn-switch"><span>⚡</span> Другая профессия</button>
+				<button class="btn btn-primary" id="btn-pdf"><span>📄</span> Скачать портфолио PDF</button>
+			</div>
+		</div>
+	</div>
+
+	<script type="module" src="/src/main.js"></script>
+</body>
+</html>
