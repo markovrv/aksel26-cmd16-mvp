@@ -1,10 +1,27 @@
+import { useState, useEffect, useCallback } from "react";
 import { useGameState } from "../context/GameStateContext.jsx";
 import { trackTitle } from "../utils/scoring.js";
 import { exportPortfolioPDF } from "../utils/PDFExporter.js";
 import Avatar3D from "../components/game/Avatar3D.jsx";
+import api from "../services/api.js";
 
-export default function ProfileScreen({ openModal, openFinalResult, navigate }) {
-  const { state, companies, completedStationCount } = useGameState();
+export default function ProfileScreen({ openModal, openFinalResult, navigate, showToast }) {
+  const { state, dispatch, companies, completedStationCount } = useGameState();
+  const [serverData, setServerData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (api.isAuthenticated()) {
+      setLoading(true);
+      api.profile.get()
+        .then(data => {
+          setServerData(data);
+          console.log("[Marshrutka] Profile loaded from server:", data);
+        })
+        .catch(err => console.warn("[Marshrutka] Failed to load profile from server:", err))
+        .finally(() => setLoading(false));
+    }
+  }, []);
 
   const completed = completedStationCount();
   const avatarStyle = {
@@ -67,6 +84,65 @@ export default function ProfileScreen({ openModal, openFinalResult, navigate }) 
     exportPortfolioPDF(state, companies);
   };
 
+  const handleLogout = () => {
+    // Clear JWT tokens
+    api.clearTokens();
+    // Clear all localStorage (game state + any app data)
+    localStorage.clear();
+    // Clear all sessionStorage
+    sessionStorage.clear();
+    // Clear cookies
+    document.cookie.split(";").forEach(c => {
+      document.cookie = c
+        .replace(/^ +/, "")
+        .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+    });
+    // Reset context state to defaults
+    dispatch({ type: "RESET_STATE" });
+    // Navigate to home
+    navigate("home");
+    showToast("Выход выполнен. Все данные в браузере очищены.");
+  };
+
+  const handleResetProgress = useCallback(async () => {
+    const confirmed = window.confirm(
+      "Сбросить весь прогресс?\n\nБудут удалены:\n• Все баллы и результаты теста\n• Пройденные станции и блоки\n• Решённые задачи\n• Достижения и аватар\n• Заявки на экскурсии\n\nПрофиль пользователя останется. Вы сможете начать заново."
+    );
+    if (!confirmed) return;
+
+    const token = api.getToken();
+    console.log("[Marshrutka] Reset: token exists:", !!token);
+
+    if (!token) {
+      showToast("Токен не найден. Войдите заново.");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/profile/reset", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+      console.log("[Marshrutka] Reset: status", res.status);
+      const data = await res.json().catch(() => null);
+      console.log("[Marshrutka] Reset: data", data);
+      if (!res.ok) {
+        throw new Error(data?.error || "Сервер вернул ошибку");
+      }
+      // Clear local game state
+      localStorage.removeItem("marshrutka-state");
+      dispatch({ type: "RESET_STATE" });
+      navigate("home");
+      showToast("Прогресс полностью сброшен. Можете начать заново.");
+    } catch (err) {
+      console.error("[Marshrutka] Reset error:", err);
+      showToast(err.message || "Ошибка при сбросе прогресса.");
+    }
+  }, [dispatch, navigate, showToast]);
+
   return (
     <section className="screen active">
       <div className="profile-layout">
@@ -76,11 +152,22 @@ export default function ProfileScreen({ openModal, openFinalResult, navigate }) 
           </div>
           <h2>{state.profile?.name || "Гость маршрута"}</h2>
           <p>{state.profile ? `${state.profile.category} · ${state.profile.email}` : "Создай профиль, чтобы начать"}</p>
+          {serverData?.user?.school && <p className="profile-school">{serverData.user.school}</p>}
           <div className="profile-level">
             <span>УРОВЕНЬ {state.level.toUpperCase()}</span>
             <i><b style={{ width: `${Math.min(100, state.score % 100)}%` }}></b></i>
           </div>
           <button className="button button-ghost full" onClick={() => openModal("avatar")}>Изменить аватар</button>
+          <button className="button button-danger full" onClick={handleLogout} style={{ marginTop: 8 }}>
+            Выход
+          </button>
+          <button
+            className="button button-ghost full"
+            onClick={handleResetProgress}
+            style={{ marginTop: 4, fontSize: 12, color: "#ff6b6b" }}
+          >
+            Сбросить прогресс
+          </button>
         </aside>
 
         <div className="profile-main">

@@ -7,6 +7,8 @@ import MarketScreen from "./screens/MarketScreen.jsx";
 import ProfileScreen from "./screens/ProfileScreen.jsx";
 import GameModal from "./components/modals/GameModal.jsx";
 import TeacherScreen from "./screens/TeacherScreen.jsx";
+import AdminScreen from "./screens/AdminScreen.jsx";
+import AdminLoginModal from "./components/modals/AdminLoginModal.jsx";
 import RegistrationModal from "./components/modals/RegistrationModal.jsx";
 import TeacherLoginModal from "./components/modals/TeacherLoginModal.jsx";
 import TestModal from "./components/modals/TestModal.jsx";
@@ -14,6 +16,7 @@ import AvatarModal from "./components/modals/AvatarModal.jsx";
 import StationPieceModal from "./components/modals/StationPieceModal.jsx";
 import TourFormModal from "./components/modals/TourFormModal.jsx";
 import FinalResultModal from "./components/modals/FinalResultModal.jsx";
+import LoginModal from "./components/modals/LoginModal.jsx";
 import Toast from "./components/layout/Toast.jsx";
 
 export default function App() {
@@ -41,6 +44,10 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
     console.log(`[Marshrutka] Navigate to: ${target}`);
   }, []);
+
+  const openLoginModal = useCallback(() => {
+    openModal("login");
+  }, [openModal]);
 
   const handleStart = useCallback(() => {
     if (!state.profile) {
@@ -101,6 +108,7 @@ export default function App() {
         handleStart={handleStart}
         openAvatar={() => state.profile ? openModal("avatar") : openModal("registration")}
         openTeacherLogin={() => openModal("teacherLogin")}
+        openAdminLogin={() => openModal("adminLogin")}
         showToast={showToast}
       />
 
@@ -123,6 +131,13 @@ export default function App() {
       {screen === "market" && (
         <MarketScreen showToast={showToast} />
       )}
+
+      {/* Admin screen — separate route */}
+      {screen === "admin" && (
+        <AdminScreen navigate={navigate} showToast={showToast} />
+      )}
+
+      {/* Profile screen — teacher or student */}
       {screen === "profile" && state.role === "teacher" ? (
         <TeacherScreen openModal={openModal} showToast={showToast} />
       ) : (
@@ -131,9 +146,22 @@ export default function App() {
             openModal={openModal}
             openFinalResult={openFinalResult}
             navigate={navigate}
+            showToast={showToast}
           />
         )
       )}
+
+      {modal?.type === "adminLogin" && (
+        <AdminLoginModal
+          onClose={closeModal}
+          onComplete={() => {
+            closeModal();
+            navigate("admin");
+            showToast("Добро пожаловать в панель администратора.");
+          }}
+        />
+      )}
+
       {modal?.type === "teacherLogin" && (
         <TeacherLoginModal
           onClose={closeModal}
@@ -145,10 +173,22 @@ export default function App() {
         />
       )}
 
+      {modal?.type === "login" && (
+        <LoginModal
+          onClose={closeModal}
+          onComplete={() => {
+            closeModal();
+            navigate("route");
+            showToast("Профиль восстановлен. Продолжи маршрут.");
+          }}
+        />
+      )}
+
       {modal?.type === "registration" && (
         <RegistrationModal
           onClose={closeModal}
           onComplete={afterRegistration}
+          openLogin={openLoginModal}
         />
       )}
       {modal?.type === "test" && (

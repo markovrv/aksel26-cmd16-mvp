@@ -32,11 +32,13 @@ router.post("/submit", auth, [
     const db = getDb();
     const { answers } = req.body;
 
-    // Check if already answered
-    const existing = db.prepare("SELECT id FROM user_answers WHERE user_id = ? LIMIT 1").get(req.user.id);
-    if (existing) {
+    // Check if already answered (by progress track)
+    const existingProgress = db.prepare("SELECT track FROM user_progress WHERE user_id = ?").get(req.user.id);
+    if (existingProgress && existingProgress.track) {
       return res.status(409).json({ error: "Диагностика уже пройдена" });
     }
+    // Delete any stale partial answers from previous failed attempts
+    db.prepare("DELETE FROM user_answers WHERE user_id = ?").run(req.user.id);
 
     // Calculate track and scores
     let initiativeScore = 0;
@@ -45,24 +47,21 @@ router.post("/submit", auth, [
 
     const questions = db.prepare("SELECT * FROM questions WHERE is_active = 1 ORDER BY sort_order").all();
 
-    const insertAnswer = db.transaction(() => {
-      for (let i = 0; i < answers.length; i++) {
-        const questionId = questions[i].id;
-        const answerIndex = answers[i];
+    for (let i = 0; i < answers.length; i++) {
+      const questionId = questions[i].id;
+      const answerIndex = answers[i];
 
-        const answer = db.prepare("SELECT * FROM question_answers WHERE question_id = ? AND sort_order = ?").get(questionId, answerIndex);
-        if (!answer) continue;
+      const answer = db.prepare("SELECT * FROM question_answers WHERE question_id = ? AND sort_order = ?").get(questionId, answerIndex);
+      if (!answer) continue;
 
-        db.prepare(
-          "INSERT INTO user_answers (user_id, question_id, answer_index, score, skill) VALUES (?, ?, ?, ?, ?)"
-        ).run(req.user.id, questionId, answerIndex, answer.score, answer.skill);
+      db.prepare(
+        "INSERT INTO user_answers (user_id, question_id, answer_index, score, skill) VALUES (?, ?, ?, ?, ?)"
+      ).run(req.user.id, questionId, answerIndex, answer.score, answer.skill);
 
-        if (answer.skill === "initiative") initiativeScore += answer.score;
-        else if (answer.skill === "analytics") analyticsScore += answer.score;
-        else if (answer.skill === "team") teamScore += answer.score;
-      }
-    });
-    insertAnswer();
+      if (answer.skill === "initiative") initiativeScore += answer.score;
+      else if (answer.skill === "analytics") analyticsScore += answer.score;
+      else if (answer.skill === "team") teamScore += answer.score;
+    }
 
     // Determine track
     const track = initiativeScore > analyticsScore ? "business" : "career";
@@ -72,6 +71,12 @@ router.post("/submit", auth, [
     const finalInit = Math.min(100, baseInit + initiativeScore + (track === "business" ? 20 : 0));
     const finalAnalytics = Math.min(100, baseAnalytics + analyticsScore + (track === "career" ? 20 : 0));
     const finalTeam = Math.min(100, baseTeam + teamScore);
+
+    // Ensure user_progress row exists
+    const up = db.prepare("SELECT id FROM user_progress WHERE user_id = ?").get(req.user.id);
+    if (!up) {
+      db.prepare("INSERT INTO user_progress (user_id, score) VALUES (?, 0)").run(req.user.id);
+    }
 
     db.prepare(`
       UPDATE user_progress SET 
@@ -87,10 +92,11 @@ router.post("/submit", auth, [
 
     // Update level
     const progress = db.prepare("SELECT score FROM user_progress WHERE user_id = ?").get(req.user.id);
+    const currentScore = progress ? progress.score : 40;
     const levels = db.prepare("SELECT * FROM level_thresholds ORDER BY sort_order DESC").all();
     let newLevel = "новичок";
     for (const l of levels) {
-      if (progress.score >= l.min_score) { newLevel = l.level_name; break; }
+      if (currentScore >= l.min_score) { newLevel = l.level_name; break; }
     }
     db.prepare("UPDATE user_progress SET level = ?, updated_at = datetime('now') WHERE user_id = ?").run(newLevel, req.user.id);
 

@@ -16,16 +16,26 @@ function requireTeacher(req, res, next) {
 // GET /api/teacher/students
 router.get("/students", auth, requireTeacher, (req, res, next) => {
   try {
+    const { classCode } = req.query;
     const db = getDb();
-    // For now, return all students (teacher-student links are a future feature)
-    const students = db.prepare(`
-      SELECT u.id, u.name, u.email, u.category, u.school, u.region, u.created_at,
+
+    let query = `
+      SELECT u.id, u.name, u.email, u.category, u.school, u.class_code, u.region, u.created_at,
              up.score, up.level, up.track, up.avatar_created
       FROM users u
       LEFT JOIN user_progress up ON up.user_id = u.id
       WHERE u.role = 'student'
-      ORDER BY u.created_at DESC
-    `).all();
+    `;
+    const params = [];
+
+    if (classCode && classCode.trim()) {
+      query += ` AND u.class_code = ?`;
+      params.push(classCode.trim());
+    }
+
+    query += ` ORDER BY u.created_at DESC`;
+
+    const students = db.prepare(query).all(...params);
 
     res.json(students);
   } catch (err) {
@@ -37,7 +47,7 @@ router.get("/students", auth, requireTeacher, (req, res, next) => {
 router.get("/students/:userId", auth, requireTeacher, (req, res, next) => {
   try {
     const db = getDb();
-    const user = db.prepare("SELECT id, name, email, category, school, region, created_at FROM users WHERE id = ? AND role = 'student'").get(req.params.userId);
+    const user = db.prepare("SELECT id, name, email, category, school, class_code, region, created_at FROM users WHERE id = ? AND role = 'student'").get(req.params.userId);
     if (!user) return res.status(404).json({ error: "Ученик не найден" });
 
     const progress = db.prepare("SELECT * FROM user_progress WHERE user_id = ?").get(req.params.userId);

@@ -100,7 +100,6 @@ router.put("/avatar", auth, [
         hair_style || "default",
         suit_style || "default"
       );
-      // Mark avatar as created and add score
       const progress = db.prepare("SELECT avatar_created FROM user_progress WHERE user_id = ?").get(req.user.id);
       if (progress && !progress.avatar_created) {
         db.prepare("UPDATE user_progress SET avatar_created = 1, score = score + 25, updated_at = datetime('now') WHERE user_id = ?").run(req.user.id);
@@ -146,6 +145,29 @@ router.get("/progress", auth, (req, res, next) => {
   }
 });
 
+// POST /api/profile/reset — сброс всего прогресса пользователя
+router.post("/reset", auth, (req, res, next) => {
+  try {
+    const db = getDb();
+    const userId = req.user.id;
+
+    // Delete all progress data
+    db.prepare("DELETE FROM user_progress WHERE user_id = ?").run(userId);
+    db.prepare("DELETE FROM user_answers WHERE user_id = ?").run(userId);
+    db.prepare("DELETE FROM user_station_progress WHERE user_id = ?").run(userId);
+    db.prepare("DELETE FROM user_task_results WHERE user_id = ?").run(userId);
+    db.prepare("DELETE FROM user_station_piece_answers WHERE user_id = ?").run(userId);
+    db.prepare("DELETE FROM user_achievements WHERE user_id = ?").run(userId);
+    db.prepare("DELETE FROM user_avatar WHERE user_id = ?").run(userId);
+    db.prepare("DELETE FROM user_tours WHERE user_id = ?").run(userId);
+    db.prepare("DELETE FROM user_game_history WHERE user_id = ?").run(userId);
+
+    res.json({ ok: true, message: "Прогресс полностью сброшен" });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/profile/tours
 router.get("/tours", auth, (req, res, next) => {
   try {
@@ -172,7 +194,6 @@ router.post("/tours", auth, [
       "INSERT INTO user_tours (user_id, company_id, tour_date, phone) VALUES (?, ?, ?, ?)"
     ).run(req.user.id, companyId, date, phone);
 
-    // Add score for tour request
     db.prepare("UPDATE user_progress SET score = score + 15, updated_at = datetime('now') WHERE user_id = ?").run(req.user.id);
 
     const tour = db.prepare("SELECT * FROM user_tours WHERE user_id = ? AND company_id = ? ORDER BY created_at DESC LIMIT 1").get(req.user.id, companyId);

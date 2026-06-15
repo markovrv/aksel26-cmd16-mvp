@@ -1,25 +1,33 @@
+# Stage 1: Build frontend
+FROM node:20-alpine AS frontend
+
+WORKDIR /build/client
+
+COPY client/package.json ./
+RUN npm i
+
+COPY client/ ./
+RUN npm run build
+
+# Stage 2: Production server
 FROM node:20-alpine
 
 ENV NODE_ENV=production
-ENV PORT=4173
+ENV PORT=15626
 
 WORKDIR /app
 
-COPY --chown=node:node package.json ./
+# Install server dependencies
+COPY server/package.json ./
+RUN npm i
 
-RUN npm install
+# Copy server source
+COPY server/ ./
 
-COPY --chown=node:node public ./public
-COPY --chown=node:node server ./server
+# Copy frontend build into server/public
+COPY --from=frontend /build/client/dist ./public
 
-RUN node --check public/app.js \
-    && node --check server/index.js
+EXPOSE 15626
 
-USER node
-
-EXPOSE 4173
-
-HEALTHCHECK --interval=15s --timeout=5s --start-period=5s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:4173').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-
-CMD ["node", "server/index.js"]
+# Init database + seed + start
+CMD ["sh", "-c", "node db/migrate.js && node db/seed.js && node index.js"]

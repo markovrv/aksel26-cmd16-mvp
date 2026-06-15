@@ -1,4 +1,5 @@
 import { createContext, useContext, useReducer, useEffect, useCallback } from "react";
+import api from "../services/api.js";
 import companies from "../data/companies.js";
 import achievements from "../data/achievements.js";
 
@@ -150,6 +151,11 @@ function reducer(state, action) {
       newState.answers = action.payload.answers;
       break;
     }
+    case "SET_SCORE": {
+      // Restore score without adding (used on login)
+      newState.score = action.payload;
+      break;
+    }
     case "SET_AVATAR": {
       newState.avatar = { ...newState.avatar, ...action.payload };
       if (!newState.avatarCreated) {
@@ -158,8 +164,40 @@ function reducer(state, action) {
       }
       break;
     }
+    case "RESTORE_AVATAR": {
+      // Restore avatar without adding bonus points (used on login)
+      newState.avatar = { ...newState.avatar, ...action.payload };
+      newState.avatarCreated = true;
+      break;
+    }
     case "ADD_SCORE": {
       newState.score += action.payload;
+      break;
+    }
+    case "RESTORE_PIECE": {
+      // Restore a completed piece without adding score (used on login)
+      const { companyId: rpId, pieceIndex: rpIdx, choice: rpChoice } = action.payload;
+      if (!newState.completed[rpId]) {
+        newState.completed[rpId] = { pieces: [], choice: null, taskResults: [] };
+      }
+      const rpProgress = newState.completed[rpId];
+      if (!rpProgress.pieces.includes(rpIdx)) {
+        rpProgress.pieces = [...rpProgress.pieces, rpIdx].sort();
+        if (rpIdx === 3 && rpChoice !== undefined && rpChoice !== null) rpProgress.choice = rpChoice;
+      }
+      break;
+    }
+    case "RESTORE_TASK_RESULT": {
+      // Restore a task result without adding score (used on login)
+      const { companyId: rtId, taskId: rtTask, score: rtScore, time: rtTime, correct: rtCorrect } = action.payload;
+      if (!newState.completed[rtId]) {
+        newState.completed[rtId] = { pieces: [], choice: null, taskResults: [] };
+      }
+      const rtProgress = newState.completed[rtId];
+      if (!rtProgress.taskResults) rtProgress.taskResults = [];
+      if (!rtProgress.taskResults.find(tr => tr.taskId === rtTask)) {
+        rtProgress.taskResults = [...rtProgress.taskResults, { taskId: rtTask, score: rtScore, time: rtTime, correct: rtCorrect }];
+      }
       break;
     }
     case "COMPLETE_PIECE": {

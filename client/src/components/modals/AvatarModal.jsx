@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useGameState } from "../../context/GameStateContext.jsx";
+import api from "../../services/api.js";
 import Avatar3D from "../game/Avatar3D.jsx";
 
 const SKINS = ["#f6d0b1", "#f0b38f", "#c9825b", "#79462f"];
@@ -11,6 +12,7 @@ export default function AvatarModal({ onClose, onComplete }) {
   const [skin, setSkin] = useState(state.avatar?.skin || "#f0b38f");
   const [hair, setHair] = useState(state.avatar?.hair || "#37251c");
   const [suit, setSuit] = useState(state.avatar?.suit || "#536dfe");
+  const [loading, setLoading] = useState(false);
 
   const avatarStyle = { "--skin": skin, "--suit": suit, "--hair": hair };
 
@@ -20,9 +22,21 @@ export default function AvatarModal({ onClose, onComplete }) {
     setSuit(SUITS[Math.floor(Math.random() * SUITS.length)]);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     console.log("[Marshrutka] Avatar saved:", { skin, hair, suit });
+    setLoading(true);
     dispatch({ type: "SET_AVATAR", payload: { skin, hair, suit } });
+
+    // Save avatar via API
+    try {
+      await api.profile.saveAvatar({ skin, hair, suit });
+      console.log("[Marshrutka] Avatar saved to server");
+    } catch (err) {
+      console.warn("[Marshrutka] Failed to save avatar to server:", err);
+    } finally {
+      setLoading(false);
+    }
+
     onComplete();
   };
 
@@ -71,8 +85,10 @@ export default function AvatarModal({ onClose, onComplete }) {
           </div>
         </div>
         <div className="modal-actions">
-          <button className="button button-ghost" onClick={randomize}>Случайный образ</button>
-          <button className="button button-primary" onClick={handleSave}>Сохранить героя →</button>
+          <button className="button button-ghost" onClick={randomize} disabled={loading}>Случайный образ</button>
+          <button className="button button-primary" onClick={handleSave} disabled={loading}>
+            {loading ? "Сохранение..." : "Сохранить героя →"}
+          </button>
         </div>
       </div>
     </div>

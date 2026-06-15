@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGameState } from "../../context/GameStateContext.jsx";
-
-const pieceLabels = ["История", "Продукты", "Профессии", "Твой выбор"];
+import api from "../../services/api.js";
 
 export default function StationPieceModal({ companyId, pieceIndex, onClose, onTourRequest, showToast }) {
   const { state, dispatch, companies, completedPieces } = useGameState();
@@ -10,10 +9,42 @@ export default function StationPieceModal({ companyId, pieceIndex, onClose, onTo
   const donePieces = completedPieces(companyId);
   const alreadyDone = donePieces.includes(pieceIndex);
   const [selected, setSelected] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [pieceData, setPieceData] = useState(null);
+  const [loadingPiece, setLoadingPiece] = useState(true);
+
+  // Load piece content from API
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingPiece(true);
+    api.companies.getPieces(companyId, { track: state.track })
+      .then(pieces => {
+        if (!cancelled && Array.isArray(pieces)) {
+          const piece = pieces.find(p => p.piece_index === pieceIndex);
+          if (piece) {
+            setPieceData(piece);
+          }
+        }
+      })
+      .catch(err => {
+        console.warn("[Marshrutka] Failed to load piece from API:", err);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingPiece(false);
+      });
+    return () => { cancelled = true; };
+  }, [companyId, pieceIndex, state.track]);
 
   if (!company) return null;
 
-  const contents = [
+  // Parse piece content from API data or fallback to hardcoded
+  const contents = pieceData ? {
+    title: pieceData.title || "",
+    visual: pieceData.visual || "",
+    facts: pieceData.facts ? (typeof pieceData.facts === "string" ? JSON.parse(pieceData.facts) : pieceData.facts) : [],
+    task: pieceData.task || "",
+    options: pieceData.options ? (typeof pieceData.options === "string" ? JSON.parse(pieceData.options) : pieceData.options) : [],
+  } : [
     {
       title: "История и масштаб",
       visual: `${company.short}: предприятие, которое влияет на развитие региона`,
@@ -44,16 +75,28 @@ export default function StationPieceModal({ companyId, pieceIndex, onClose, onTo
       task: "Как хочешь взаимодействовать с предприятием?",
       options: ["Как предприниматель-партнёр", "Как сотрудник команды"]
     }
-  ][pieceIndex];
+  ][pieceIndex] || { title: "", visual: "", facts: [], task: "", options: [] };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (!alreadyDone && selected === null) return;
+
     if (!alreadyDone) {
+      setLoading(true);
       const choice = pieceIndex === 3 ? (selected === 0 ? "business" : "career") : null;
-      console.log(`[Marshrutka] Complete piece: ${companyId}[${pieceIndex}], choice=${choice}`);
+
       dispatch({ type: "COMPLETE_PIECE", payload: { companyId, pieceIndex, choice } });
+
+      try {
+        await api.stationPieces.complete(companyId, pieceIndex, { choice });
+        console.log(`[Marshrutka] Piece ${pieceIndex} for ${companyId} synced to server`);
+      } catch (err) {
+        console.warn("[Marshrutka] Failed to sync piece to server:", err);
+      } finally {
+        setLoading(false);
+      }
+
       if (pieceIndex === 3 && companyId !== "final") {
-        showToast(`+${pieceIndex === 3 ? 35 : 20} энергии. Станция пройдена.`);
+        showToast(`+35 энергии. Станция пройдена.`);
         onClose();
         setTimeout(() => onTourRequest(companyId), 400);
         return;
@@ -67,6 +110,23 @@ export default function StationPieceModal({ companyId, pieceIndex, onClose, onTo
     }
     onClose();
   };
+
+  if (loadingPiece) {
+    return (
+      <div className="modal-backdrop open" onClick={e => e.target.classList.contains("modal-backdrop") && onClose()}>
+        <div className="modal">
+          <div className="modal-head">
+            <div>
+              <small>ЗАГРУЗКА</small>
+              <h2>{company.short}</h2>
+            </div>
+            <button className="close-button" onClick={onClose}>×</button>
+          </div>
+          <p style={{ textAlign: "center", padding: "2rem", color: "#7b8497" }}>Загружаем содержимое...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="modal-backdrop open" onClick={e => e.target.classList.contains("modal-backdrop") && onClose()}>
@@ -91,7 +151,7 @@ export default function StationPieceModal({ companyId, pieceIndex, onClose, onTo
             {contents.options.map((opt, i) => (
               <button key={i} className={selected === i ? "selected" : ""}
                 onClick={() => setSelected(i)}
-                disabled={alreadyDone}>
+                disabled={alreadyDone || loading}>
                 {opt}
               </button>
             ))}
@@ -99,8 +159,8 @@ export default function StationPieceModal({ companyId, pieceIndex, onClose, onTo
         </div>
         <div className="modal-actions">
           <button className="button button-primary" onClick={handleComplete}
-            disabled={!alreadyDone && selected === null}>
-            {alreadyDone ? "Посмотреть карту" : "Завершить блок +20"}
+            disabled={(!alreadyDone && selected === null) || loading}>
+            {loading ? "Сохранение..." : alreadyDone ? "Посмотреть карту" : "Завершить блок +20"}
           </button>
         </div>
       </div>

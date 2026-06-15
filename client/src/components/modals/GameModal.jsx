@@ -4,6 +4,7 @@ import { OrbitControls } from "@react-three/drei";
 import { useGameState } from "../../context/GameStateContext.jsx";
 import useTimer from "../../hooks/useTimer.js";
 import { timeBonus } from "../../utils/scoring.js";
+import api from "../../services/api.js";
 import ConstructionSiteR3F from "../../game/scenes/ConstructionSiteR3F.jsx";
 import DispatchRoomR3F from "../../game/scenes/DispatchRoomR3F.jsx";
 import InspectionSiteR3F from "../../game/scenes/InspectionSiteR3F.jsx";
@@ -301,6 +302,10 @@ export default function GameModal({ company, profession, onClose, showToast }) {
   const finishGame = useCallback(() => {
     dispatch({ type: "SAVE_GAME_HISTORY", payload: { profession } });
     dispatch({ type: "COMPLETE_PIECE", payload: { companyId: company.id, pieceIndex: 3, choice: null } });
+    // Sync piece 3 completion with server
+    api.stationPieces.complete(company.id, 3, { choice: null }).catch(err => {
+      console.warn("[Marshrutka] Failed to sync game piece to server:", err);
+    });
     if (taskResults.length === 3 && taskResults.every(r => r.correct)) {
       dispatch({ type: "UNLOCK_ACHIEVEMENT", payload: "perfectionist" });
     }

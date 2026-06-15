@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
   role TEXT NOT NULL DEFAULT 'student',
   school TEXT DEFAULT NULL,
   region TEXT DEFAULT NULL,
+  class_code TEXT DEFAULT NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

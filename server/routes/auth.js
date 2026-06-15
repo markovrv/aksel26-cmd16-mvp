@@ -14,10 +14,13 @@ router.post("/register", [
   body("email").isEmail().normalizeEmail().withMessage("Некорректный email"),
   body("password").isLength({ min: 6 }).withMessage("Пароль минимум 6 символов"),
   body("category").optional().trim(),
+  body("role").optional().trim(),
+  body("school").optional().trim(),
+  body("classCode").optional().trim(),
   validate,
 ], async (req, res, next) => {
   try {
-    const { name, email, password, category } = req.body;
+    const { name, email, password, category, role, school, classCode } = req.body;
     const db = getDb();
 
     const existing = db.prepare("SELECT id FROM users WHERE email = ?").get(email);
@@ -27,15 +30,15 @@ router.post("/register", [
 
     const password_hash = await hashPassword(password);
     db.prepare(
-      "INSERT INTO users (name, email, password_hash, category) VALUES (?, ?, ?, ?)"
-    ).run(name, email, password_hash, category || "Школьник");
+      "INSERT INTO users (name, email, password_hash, category, school, class_code) VALUES (?, ?, ?, ?, ?, ?)"
+    ).run(name, email, password_hash, category || "Школьник", school || null, classCode || null);
 
     const userId = db.prepare("SELECT id FROM users WHERE email = ?").get(email).id;
 
     // Create user_progress record
     db.prepare("INSERT INTO user_progress (user_id) VALUES (?)").run(userId);
 
-    const user = db.prepare("SELECT id, name, email, category, role, school, region, created_at FROM users WHERE id = ?").get(userId);
+    const user = db.prepare("SELECT id, name, email, category, role, school, class_code, created_at FROM users WHERE id = ?").get(userId);
 
     const accessToken = signAccessToken({ userId, role: user.role });
     const refreshToken = signRefreshToken({ userId, role: user.role });
@@ -94,7 +97,6 @@ router.post("/refresh", [
       return res.status(401).json({ error: "Refresh token не найден" });
     }
 
-    // Delete old token (one-time use)
     db.prepare("DELETE FROM refresh_tokens WHERE id = ?").run(stored.id);
 
     let decoded;

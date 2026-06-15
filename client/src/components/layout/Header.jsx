@@ -1,7 +1,8 @@
 import { useGameState } from "../../context/GameStateContext.jsx";
 import { trackTitle } from "../../utils/scoring.js";
+import api from "../../services/api.js";
 
-export default function Header({ screen, navigate, handleStart, openAvatar, openTeacherLogin, showToast }) {
+export default function Header({ screen, navigate, handleStart, openAvatar, openTeacherLogin, openAdminLogin, showToast }) {
   const { state, dispatch, completedStationCount } = useGameState();
 
   const avatarStyle = {
@@ -27,6 +28,9 @@ export default function Header({ screen, navigate, handleStart, openAvatar, open
         <button className={`nav-link ${screen === "route" ? "active" : ""}`} onClick={() => navigate("route")}>Маршрут</button>
         <button className={`nav-link ${screen === "market" ? "active" : ""}`} onClick={() => navigate("market")}>Маркет</button>
         <button className={`nav-link ${screen === "profile" ? "active" : ""}`} onClick={() => navigate("profile")}>Профиль</button>
+        {state.role === "admin" && (
+          <button className={`nav-link ${screen === "admin" ? "active" : ""}`} onClick={() => navigate("admin")}>Админ</button>
+        )}
       </nav>
 
       <div className="status-panel">
@@ -38,13 +42,23 @@ export default function Header({ screen, navigate, handleStart, openAvatar, open
           <span className="mini-avatar" style={avatarStyle}></span>
           <span>{playerName}</span>
         </button>
-        {state.role !== "teacher" && (
-          <button className="button button-ghost compact" onClick={openTeacherLogin} style={{ fontSize: 11 }}>
-            🔑 Педагогу
-          </button>
+        {state.role !== "teacher" && state.role !== "admin" && (
+          <>
+            <button className="button button-ghost compact" onClick={openTeacherLogin} style={{ fontSize: 11 }}>
+              🔑 Педагогу
+            </button>
+            <button className="button button-ghost compact" onClick={openAdminLogin} style={{ fontSize: 11 }}>
+              ⚙️ Админ
+            </button>
+          </>
         )}
-        {state.role === "teacher" && (
-          <button className="button button-ghost compact" onClick={() => { dispatch({ type: "SET_ROLE", payload: "student" }); navigate("home"); showToast("Выход из кабинета педагога."); }} style={{ fontSize: 11 }}>
+        {(state.role === "teacher" || state.role === "admin") && (
+          <button className="button button-ghost compact" onClick={() => {
+            api.clearTokens();
+            dispatch({ type: "SET_ROLE", payload: "student" });
+            navigate("home");
+            showToast("Выход из кабинета.");
+          }} style={{ fontSize: 11 }}>
             Выйти
           </button>
         )}

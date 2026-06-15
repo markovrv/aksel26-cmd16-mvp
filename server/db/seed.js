@@ -334,16 +334,81 @@ async function seed() {
   insertLevel.run("эксперт", 450, 3);
   console.log("[seed] 4 level_thresholds inserted.");
 
-  // 11. Admin user (from .env)
+  // 11. Admin user (from .env) + profile
   const adminEmail = process.env.ADMIN_EMAIL || "admin@marshrutka.ru";
   const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
   const adminHash = await hashPassword(adminPassword);
   const insertAdmin = db.prepare(`INSERT INTO users (name, email, password_hash, category, role) VALUES (?, ?, ?, ?, ?)`);
+  let adminId = null;
   try {
-    insertAdmin.run("Администратор", adminEmail, adminHash, "Администратор", "admin");
+    const info = insertAdmin.run("Администратор", adminEmail, adminHash, "Администратор", "admin");
+    const row = db.prepare("SELECT id FROM users WHERE email = ?").get(adminEmail);
+    adminId = row ? row.id : null;
     console.log(`[seed] Admin user created: ${adminEmail}`);
   } catch (e) {
     console.log(`[seed] Admin user skipped: ${e.message}`);
+    const row = db.prepare("SELECT id FROM users WHERE email = ?").get(adminEmail);
+    adminId = row ? row.id : null;
+  }
+
+  // 12. Demo students for teacher screen
+  const demoPasswordHash = await hashPassword("demo123");
+  const insertStudent = db.prepare(`INSERT INTO users (name, email, password_hash, category, role, school, class_code) VALUES (?, ?, ?, ?, ?, ?, ?)`);
+  const insertStudentProgress = db.prepare(`INSERT INTO user_progress (user_id, score, level, track, skills_initiative, skills_analytics, skills_team) VALUES (?, ?, ?, ?, ?, ?, ?)`);
+  const insertStationProgress = db.prepare(`INSERT INTO user_station_progress (user_id, company_id, pieces, choice) VALUES (?, ?, ?, ?)`);
+  const insertUserAchievement = db.prepare(`INSERT OR IGNORE INTO user_achievements (user_id, achievement_id) VALUES (?, ?)`);
+  const insertAvatar = db.prepare(`INSERT INTO user_avatar (user_id, skin, hair, suit) VALUES (?, ?, ?, ?)`);
+
+  const demoStudents = [
+    {
+      name: "Анна Петрова", email: "anna@student.ru", category: "Школьник", school: "Демо-школа №1", classCode: "7А-2026",
+      progress: { score: 245, level: "стажёр", track: "career", skills_initiative: 45, skills_analytics: 68, skills_team: 52 },
+      stations: [
+        { company_id: "leps", pieces: "[0,1,2,3]", choice: "career" },
+        { company_id: "mayak", pieces: "[0,1,2]", choice: null },
+      ],
+      achievements: ["member", "track_found", "avatar_built", "first_station"],
+      avatar: { skin: "#f6d0b1", hair: "#8c5a2b", suit: "#5ce1b9" },
+    },
+    {
+      name: "Иван Смирнов", email: "ivan@student.ru", category: "Студент колледжа", school: "Демо-школа №1", classCode: "7А-2026",
+      progress: { score: 410, level: "мастер", track: "business", skills_initiative: 82, skills_analytics: 55, skills_team: 48 },
+      stations: [
+        { company_id: "leps", pieces: "[0,1,2,3]", choice: "business" },
+        { company_id: "mayak", pieces: "[0,1,2,3]", choice: "business" },
+        { company_id: "vmp", pieces: "[0,1,2,3]", choice: "business" },
+        { company_id: "biohim", pieces: "[0,1,2]", choice: null },
+        { company_id: "kccm", pieces: "[0,1]", choice: null },
+      ],
+      achievements: ["member", "track_found", "avatar_built", "first_station", "equator", "quick_solver", "perfectionist"],
+      avatar: { skin: "#f0b38f", hair: "#171717", suit: "#ff6f61" },
+    },
+    {
+      name: "Ольга Кузнецова", email: "olga@student.ru", category: "Школьник", school: "Демо-школа №1", classCode: "7А-2026",
+      progress: { score: 85, level: "стажёр", track: null, skills_initiative: 30, skills_analytics: 30, skills_team: 30 },
+      stations: [],
+      achievements: [],
+      avatar: { skin: "#c9825b", hair: "#e2c477", suit: "#b887ff" },
+    },
+  ];
+
+  for (const s of demoStudents) {
+    try {
+      insertStudent.run(s.name, s.email, demoPasswordHash, s.category, "student", s.school || null, s.classCode || null);
+      const userId = db.prepare("SELECT id FROM users WHERE email = ?").get(s.email).id;
+      insertStudentProgress.run(userId, s.progress.score, s.progress.level, s.progress.track,
+        s.progress.skills_initiative, s.progress.skills_analytics, s.progress.skills_team);
+      for (const st of s.stations) {
+        insertStationProgress.run(userId, st.company_id, st.pieces, st.choice);
+      }
+      for (const a of s.achievements) {
+        insertUserAchievement.run(userId, a);
+      }
+      insertAvatar.run(userId, s.avatar.skin, s.avatar.hair, s.avatar.suit);
+      console.log(`[seed] Demo student created: ${s.name} (${s.email})`);
+    } catch (e) {
+      console.log(`[seed] Demo student skipped: ${s.name} (${e.message})`);
+    }
   }
 
   console.log("[seed] Сидирование завершено успешно.");

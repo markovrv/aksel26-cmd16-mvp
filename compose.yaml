@@ -6,6 +6,11 @@ services:
     init: true
     restart: unless-stopped
     ports:
-      - "47626:4173"
+      - "15626:15626"
     environment:
-      PORT: "4173"
+      PORT: "15626"
+    volumes:
+      - app-data:/app/server/db
+
+volumes:
+  app-data:
