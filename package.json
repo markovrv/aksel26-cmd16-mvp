@@ -9,7 +9,10 @@
     "dev": "node --watch server/index.js",
     "dev:client": "cd client && npm run dev",
     "build": "cd client && npm run build",
-    "postinstall": "cd client && npm install",
+    "postinstall": "cd client && npm install && cd .. && cd server && npm install",
+    "db:migrate": "node server/db/migrate.js",
+    "db:seed": "node server/db/seed.js",
+    "db:reset": "node server/db/migrate.js --reset && node server/db/seed.js",
     "test": "cd client && npm run build -- --emptyOutDir && node --check server/index.js"
   },
   "engines": {

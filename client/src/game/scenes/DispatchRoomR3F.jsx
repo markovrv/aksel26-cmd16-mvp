@@ -37,28 +37,31 @@ function Monitor({ position, rotation }) {
 export default function DispatchRoomR3F({ taskIndex = 1, emergencyMode = false }) {
   return (
     <group>
+      {/* Ambient — базовая засветка */}
+      <ambientLight intensity={0.6} color="#ffffff" />
+
       {/* Пол */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, -0.01, 0]}>
         <planeGeometry args={[8, 6]} />
-        <meshStandardMaterial color="#1a1a2e" roughness={0.5} />
+        <meshStandardMaterial color="#3a3a5e" roughness={0.5} />
       </mesh>
 
       {/* Потолок */}
       <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 3.5, 0]}>
         <planeGeometry args={[8, 6]} />
-        <meshStandardMaterial color="#0f0f23" roughness={0.9} />
+        <meshStandardMaterial color="#2a2a4e" roughness={0.9} />
       </mesh>
 
       {/* Стена дальняя (по Z = -2) */}
       <mesh position={[0, 1.75, -2]} rotation={[0, 0, 0]}>
         <planeGeometry args={[8, 3.5]} />
-        <meshStandardMaterial color="#161630" roughness={0.7} />
+        <meshStandardMaterial color="#3a3a5e" roughness={0.7} />
       </mesh>
 
       {/* Стена левая */}
       <mesh position={[-3.5, 1.75, 0]} rotation={[0, Math.PI / 2, 0]}>
         <planeGeometry args={[6, 3.5]} />
-        <meshStandardMaterial color="#131328" roughness={0.7} />
+        <meshStandardMaterial color="#34345a" roughness={0.7} />
       </mesh>
 
       {/* Главный щиток */}
@@ -108,8 +111,9 @@ export default function DispatchRoomR3F({ taskIndex = 1, emergencyMode = false }
       )}
 
       {/* Освещение */}
-      <pointLight position={[0, 1.8, 0]} intensity={0.4} color="#aaccff" distance={8} />
-      <pointLight position={[-2, 1.5, -1]} intensity={0.3} color="#ffcc88" distance={4} />
+      <pointLight position={[0, 3.2, 0]} intensity={1.5} color="#ddeeff" distance={10} />
+      <pointLight position={[-2, 1.5, -1]} intensity={0.8} color="#ffcc88" distance={6} />
+      <pointLight position={[2, 1.5, -1]} intensity={0.8} color="#ffcc88" distance={6} />
     </group>
   );
 }

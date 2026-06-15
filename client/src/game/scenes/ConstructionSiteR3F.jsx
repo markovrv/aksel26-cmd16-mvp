@@ -48,15 +48,19 @@ export default function ConstructionSiteR3F({ taskIndex = 1, highlightZones = fa
 
   return (
     <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, 0, 0]}><planeGeometry args={[40, 40]} /><meshStandardMaterial color="#5a5a4a" roughness={0.9} /></mesh>
-      <mesh position={[0, 0.15, 0]} castShadow receiveShadow><boxGeometry args={[6, 0.3, 4]} /><meshStandardMaterial color="#888888" roughness={0.9} /></mesh>
-      {wallsVisible && [{ x: 0, z: -1.9, ry: 0 }, { x: -2.9, z: -1, ry: Math.PI / 2 }, { x: 2.9, z: -1, ry: Math.PI / 2 }].map((p, i) => (<mesh key={i} position={[p.x, 1, p.z]} rotation={[0, p.ry, 0]} castShadow receiveShadow><boxGeometry args={[6, 2, 0.25]} /><meshStandardMaterial color="#cc6644" roughness={0.7} /></mesh>))}
+      {/* Основное освещение сцены */}
+      <directionalLight position={[10, 15, 10]} intensity={1.2} color="#ffffff" castShadow />
+      <directionalLight position={[-5, 10, -5]} intensity={0.6} color="#aaccff" />
+
+      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, 0, 0]}><planeGeometry args={[40, 40]} /><meshStandardMaterial color="#8a8a7a" roughness={0.9} /></mesh>
+      <mesh position={[0, 0.15, 0]} castShadow receiveShadow><boxGeometry args={[6, 0.3, 4]} /><meshStandardMaterial color="#aaaaaa" roughness={0.9} /></mesh>
+      {wallsVisible && [{ x: 0, z: -1.9, ry: 0 }, { x: -2.9, z: -1, ry: Math.PI / 2 }, { x: 2.9, z: -1, ry: Math.PI / 2 }].map((p, i) => (<mesh key={i} position={[p.x, 1, p.z]} rotation={[0, p.ry, 0]} castShadow receiveShadow><boxGeometry args={[6, 2, 0.25]} /><meshStandardMaterial color="#dd8866" roughness={0.7} /></mesh>))}
       <group position={[-6, 0, truckPos]} rotation={[0, 0, 0]}>
-        <mesh position={[0, 0.5, 0]} castShadow><boxGeometry args={[1, 0.8, 2]} /><meshStandardMaterial color="#cc2222" roughness={0.5} metalness={0.3} /></mesh>
-        <mesh position={[0, 0.6, 1.2]} castShadow><boxGeometry args={[0.8, 1, 1]} /><meshStandardMaterial color="#cc2222" roughness={0.5} metalness={0.3} /></mesh>
-        {[[-0.5, -0.6], [0.5, -0.6], [-0.5, 0.8], [0.5, 0.8]].map(([x, z], i) => (<mesh key={i} position={[x, 0.3, z]} rotation={[0, 0, Math.PI / 2]} castShadow><cylinderGeometry args={[0.3, 0.3, 0.2, 16]} /><meshStandardMaterial color="#222222" roughness={0.9} /></mesh>))}
-        <mesh position={[-0.3, 0.4, 1.6]}><sphereGeometry args={[0.1, 8, 8]} /><meshStandardMaterial color="#ffffaa" emissive="#ffffaa" emissiveIntensity={emergencyMode ? 1.5 : 0.3} /></mesh>
-        <mesh position={[0.3, 0.4, 1.6]}><sphereGeometry args={[0.1, 8, 8]} /><meshStandardMaterial color="#ffffaa" emissive="#ffffaa" emissiveIntensity={emergencyMode ? 1.5 : 0.3} /></mesh>
+        <mesh position={[0, 0.5, 0]} castShadow><boxGeometry args={[1, 0.8, 2]} /><meshStandardMaterial color="#ee3333" roughness={0.5} metalness={0.3} emissive="#ee3333" emissiveIntensity={0.2} /></mesh>
+        <mesh position={[0, 0.6, 1.2]} castShadow><boxGeometry args={[0.8, 1, 1]} /><meshStandardMaterial color="#ee3333" roughness={0.5} metalness={0.3} emissive="#ee3333" emissiveIntensity={0.2} /></mesh>
+        {[[-0.5, -0.6], [0.5, -0.6], [-0.5, 0.8], [0.5, 0.8]].map(([x, z], i) => (<mesh key={i} position={[x, 0.3, z]} rotation={[0, 0, Math.PI / 2]} castShadow><cylinderGeometry args={[0.3, 0.3, 0.2, 16]} /><meshStandardMaterial color="#444444" roughness={0.9} /></mesh>))}
+        <mesh position={[-0.3, 0.4, 1.6]}><sphereGeometry args={[0.1, 8, 8]} /><meshStandardMaterial color="#ffdd44" emissive="#ffdd44" emissiveIntensity={emergencyMode ? 1.5 : 0.5} /></mesh>
+        <mesh position={[0.3, 0.4, 1.6]}><sphereGeometry args={[0.1, 8, 8]} /><meshStandardMaterial color="#ffdd44" emissive="#ffdd44" emissiveIntensity={emergencyMode ? 1.5 : 0.5} /></mesh>
       </group>
       <group position={[5, 0, -2]}>
         <mesh position={[0, 1, 0]} castShadow receiveShadow><boxGeometry args={[3, 2, 2]} /><meshStandardMaterial color="#8b7355" roughness={0.8} /></mesh>

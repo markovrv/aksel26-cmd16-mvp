@@ -1,46 +1,58 @@
 import { Router } from "express";
+import authRouter from "./auth.js";
+import profileRouter from "./profile.js";
+import companiesRouter from "./companies.js";
+import tasksRouter from "./tasks.js";
+import stationPiecesRouter from "./station-pieces.js";
+import questionsRouter from "./questions.js";
+import portfolioRouter from "./portfolio.js";
+import teacherRouter from "./teacher.js";
+import statisticsRouter from "./statistics.js";
+import finalResultRouter from "./final-result.js";
+import configRouter from "./config.js";
+import adminRouter from "./admin/index.js";
 
 const router = Router();
 
-// v2.0 — заглушки API, возвращают HTTP 501 Not Implemented
-// В v2.1 здесь будет полноценный REST API
-
+// Health check
 router.get("/health", (_req, res) => {
-  res.json({ status: "ok", version: "2.0" });
+  res.json({ status: "ok", version: "2.1" });
 });
 
-// Профиль
-router.get("/profile", (_req, res) => {
-  res.status(501).json({ error: "Not Implemented — используйте localStorage в v2.0" });
-});
+// Auth (/auth/*)
+router.use("/auth", authRouter);
 
-// Предприятия
-router.get("/companies", (_req, res) => {
-  res.status(501).json({ error: "Not Implemented" });
-});
+// Profile (/api/profile/*)
+router.use("/profile", profileRouter);
 
-router.get("/companies/:id/tasks", (_req, res) => {
-  res.status(501).json({ error: "Not Implemented" });
-});
+// Companies (/api/companies/*)
+router.use("/companies", companiesRouter);
 
-// Решения задач
-router.post("/tasks/:id/solve", (_req, res) => {
-  res.status(501).json({ error: "Not Implemented" });
-});
+// Tasks (/api/tasks/*)
+router.use("/tasks", tasksRouter);
 
-// Портфолио
-router.get("/portfolio/:userId", (_req, res) => {
-  res.status(501).json({ error: "Not Implemented — PDF генерируется на фронтенде" });
-});
+// Station Pieces (/api/station-pieces/*)
+router.use("/station-pieces", stationPiecesRouter);
 
-// Педагог
-router.get("/teacher/students", (_req, res) => {
-  res.status(501).json({ error: "Not Implemented — роль teacher в v2.1" });
-});
+// Questions (/api/questions/*)
+router.use("/questions", questionsRouter);
 
-// Статистика
-router.get("/statistics/professions", (_req, res) => {
-  res.status(501).json({ error: "Not Implemented" });
-});
+// Portfolio (/api/portfolio/*)
+router.use("/portfolio", portfolioRouter);
+
+// Teacher (/api/teacher/*)
+router.use("/teacher", teacherRouter);
+
+// Statistics (/api/statistics/*)
+router.use("/statistics", statisticsRouter);
+
+// Final Result (/api/final-result/*)
+router.use("/final-result", finalResultRouter);
+
+// Config (/api/config/*)
+router.use("/config", configRouter);
+
+// Admin (/api/admin/*)
+router.use("/admin", adminRouter);
 
 export default router;

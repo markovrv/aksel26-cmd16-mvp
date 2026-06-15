@@ -111,6 +111,140 @@ function DragDropPanel({ onComplete, onCancel }) {
   );
 }
 
+// ── Панель проверки документов (Инспектор Задача 2) ──
+const DOC_ROWS = [
+  { idx: 0, actText: "Диаметр арматуры: 10 мм", normText: "Диаметр арматуры: 12 мм", isError: true },
+  { idx: 1, actText: "Шаг армирования: 200 мм", normText: "Шаг армирования: 200 мм ✓", isError: false },
+  { idx: 2, actText: "Марка бетона: М200", normText: "Марка бетона: М300", isError: true },
+  { idx: 3, actText: "Глубина залегания: 1.2 м", normText: "Глубина залегания: 1.2 м ✓", isError: false },
+  { idx: 4, actText: "Подпись прораба: есть", normText: "Подпись прораба: обяз. ✓", isError: false },
+  { idx: 5, actText: "Подпись КК: —", normText: "Подпись КК: обязательна", isError: true },
+];
+
+function DocCheckPanel({ onComplete, onCancel }) {
+  const [markedErrors, setMarkedErrors] = useState([]);
+  const [showDecision, setShowDecision] = useState(false);
+
+  const toggleRow = (rowIdx) => {
+    setMarkedErrors(prev =>
+      prev.includes(rowIdx) ? prev.filter(i => i !== rowIdx) : [...prev, rowIdx]
+    );
+  };
+
+  const handleConfirm = () => {
+    setShowDecision(true);
+  };
+
+  const handleDecision = (decision) => {
+    const correctErrors = [0, 2, 5];
+    const foundCorrect = correctErrors.filter(i => markedErrors.includes(i)).length;
+    const falseMarks = markedErrors.filter(i => !correctErrors.includes(i)).length;
+
+    let score = 0;
+    let message = "";
+
+    if (foundCorrect >= 3 && decision === 1) {
+      score = 15; message = "✅ +15 баллов! Акт возвращён на доработку";
+    } else if (foundCorrect >= 2 && decision === 1) {
+      score = 10; message = "✅ +10 баллов. Частично верно";
+    } else if (foundCorrect >= 3 && decision === 2) {
+      score = 5; message = "⚠️ +5 баллов. Подписано с замечаниями";
+    } else if (decision === 3) {
+      score = 0; message = "❌ Некачественный бетон М200 не выдержит нагрузки!";
+    } else {
+      score = 0; message = "❌ Не все ошибки найдены.";
+    }
+
+    onComplete(score, score >= 10, message, foundCorrect, falseMarks);
+  };
+
+  if (showDecision) {
+    const found = markedErrors.length;
+    const correctErrors = [0, 2, 5];
+    const foundCorrect = correctErrors.filter(i => markedErrors.includes(i)).length;
+    const falseMarks = markedErrors.filter(i => !correctErrors.includes(i)).length;
+
+    return (
+      <div style={{ pointerEvents: "auto", maxWidth: 520, margin: "0 auto", padding: "0 16px" }}>
+        <div className="task-box" style={{ background: "rgba(20,24,37,.97)", border: "1px solid var(--line)", backdropFilter: "blur(8px)" }}>
+          <h4 style={{ marginBottom: 10 }}>📋 ЗАКЛЮЧЕНИЕ ПО АКТУ</h4>
+          <p style={{ fontSize: 14, marginBottom: 12 }}>
+            Найдено несоответствий: <strong>{found}</strong><br />
+            Из них верных: <strong>{foundCorrect}/3</strong>
+            {falseMarks > 0 && <><br /><span style={{ color: "var(--warning)" }}>Ложных отметок: {falseMarks}</span></>}
+          </p>
+          <p style={{ fontSize: 14, marginBottom: 10 }}><strong>Что делаем с актом?</strong></p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+            {[
+              { id: 1, text: "Отказать в подписании акта", hint: "Вернуть бригаде на исправление" },
+              { id: 2, text: "Подписать акт с замечаниями", hint: "Исправят потом" },
+              { id: 3, text: "Подписать без замечаний", hint: "Прораб просит не задерживать" },
+            ].map(opt => (
+              <button key={opt.id} className="option-item" onClick={() => handleDecision(opt.id)}>
+                <strong>{opt.text}</strong><br />
+                <small style={{ color: "var(--muted)" }}>{opt.hint}</small>
+              </button>
+            ))}
+          </div>
+          <button className="button button-ghost compact" onClick={() => setShowDecision(false)}>← Назад к проверке</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ pointerEvents: "auto", width: "100%", maxWidth: 760, padding: "0 16px" }}>
+      <div style={{ background: "rgba(20,24,37,.97)", borderRadius: 14, border: "1px solid var(--line)", padding: 20 }}>
+        <h4 style={{ fontSize: 14, marginBottom: 4 }}>📋 ПРОВЕРКА АКТА СКРЫТЫХ РАБОТ</h4>
+        <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 16 }}>Нажмите на строки с несоответствиями</p>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0, fontSize: 12 }}>
+          <div style={{ padding: "8px 10px", background: "rgba(255,255,255,0.04)", fontWeight: 700, borderRadius: "8px 0 0 0" }}>АКТ ОТ БРИГАДЫ</div>
+          <div style={{ padding: "8px 10px", background: "rgba(255,255,255,0.04)", fontWeight: 700, borderRadius: "0 8px 0 0" }}>НОРМАТИВ (СНиП 3.03.01)</div>
+          {DOC_ROWS.flatMap(row => {
+            const isMarked = markedErrors.includes(row.idx);
+            return [
+              <div key={`act-${row.idx}`}
+                onClick={() => toggleRow(row.idx)}
+                style={{
+                  padding: "8px 10px", cursor: "pointer",
+                  borderBottom: "1px solid rgba(255,255,255,0.04)",
+                  background: isMarked ? "rgba(255,68,68,0.15)" : "transparent",
+                  color: isMarked ? "#ff8888" : "inherit",
+                  display: "flex", alignItems: "center", gap: 8, transition: "all 0.15s",
+                }}>
+                <span style={{
+                  display: "inline-flex", width: 18, height: 18, borderRadius: 4,
+                  border: isMarked ? "2px solid #ff4444" : "2px solid rgba(255,255,255,0.2)",
+                  background: isMarked ? "#ff4444" : "transparent",
+                  alignItems: "center", justifyContent: "center", fontSize: 10, flexShrink: 0, transition: "all 0.15s",
+                }}>
+                  {isMarked && "✕"}
+                </span>
+                {row.actText}
+              </div>,
+              <div key={`norm-${row.idx}`} style={{
+                padding: "8px 10px", borderBottom: "1px solid rgba(255,255,255,0.04)",
+                color: row.isError ? "#ff8888" : "#88cc88",
+              }}>
+                {row.normText}
+              </div>,
+            ];
+          })}
+        </div>
+        <div style={{ marginTop: 12, fontSize: 13, color: "var(--muted)" }}>
+          Отмечено: <strong style={{ color: markedErrors.length >= 3 ? "#22c55e" : "var(--muted)" }}>{markedErrors.length}</strong>/3
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 12 }}>
+        <button className="button button-ghost compact" onClick={onCancel}>Отмена</button>
+        <button className="button button-primary compact" disabled={markedErrors.length === 0} onClick={handleConfirm}>
+          📋 ПОДГОТОВИТЬ ЗАКЛЮЧЕНИЕ
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function getTasks(profession) {
   if (profession === "foreman") return [
     { id: 1, title: "Приёмка материалов", description: "По накладной пришло 520 шт кирпича вместо заказанных 500. Что будешь делать?", type: "invoice", maxScore: 10 },
@@ -123,8 +257,8 @@ function getTasks(profession) {
     { id: 3, title: "Авария: обрыв ЛЭП", description: "Произошёл обрыв линии электропередачи.", type: "choice", options: [{ text: "Отключить всё, пока чинят", correct: false }, { text: "Отключить хлебозавод, дать свет в дома и школу", correct: true }, { text: "Дать свет хлебозаводу, отключить дома", correct: false }], maxScore: 20, emergency: true },
   ];
   if (profession === "inspector") return [
-    { id: 1, title: "Осмотр стены", description: "Найди 3 дефекта на стене (A1-трещина, B2-шов, C3-вздутие).", type: "choice", options: [{ text: "Трещина в A1, шов B2, вздутие C3", correct: true }, { text: "Вздутие A1, трещина B3", correct: false }, { text: "Нет дефектов", correct: false }], maxScore: 10 },
-    { id: 2, title: "Проверка документации", description: "Сравни акт бригады с нормативом СНиП. Найди 3 ошибки.", type: "checkbox", options: [{ id: "diam", text: "Диаметр арматуры: 10 мм вместо 12 мм", correct: true }, { id: "beton", text: "Марка бетона: М200 вместо М300", correct: true }, { id: "sign", text: "Подпись КК отсутствует", correct: true }, { id: "step", text: "Шаг армирования: 200 мм (верно)", correct: false }], maxScore: 15 },
+    { id: 1, title: "Осмотр стены", description: "Кликайте по стене — ищите трещины, широкие швы, вздутия", type: "inspection", maxScore: 10 },
+    { id: 2, title: "Проверка документации", description: "Сравни акт бригады с нормативом СНиП. Найди 3 ошибки.", type: "doccheck", maxScore: 15 },
     { id: 3, title: "Звонок заказчика", description: "Директор звонит и давит подписать акт приёмки раньше срока.", type: "choice", options: [{ text: "Подписать — директору виднее", correct: false }, { text: "Отказать — провести полную проверку", correct: true }, { text: "Подписать задним числом", correct: false }], maxScore: 20 },
   ];
   return [];
@@ -143,6 +277,13 @@ export default function GameModal({ company, profession, onClose, showToast }) {
   const [workerAssignments, setWorkerAssignments] = useState(null);
   const timer = useTimer();
   const invoiceTimerRef = useRef(null);
+  // Inspector task 1 — интерактивный осмотр
+  const [inspectorFoundZones, setInspectorFoundZones] = useState(new Set());
+  const [inspectorFalseTaps, setInspectorFalseTaps] = useState(0);
+  const [inspectorJournal, setInspectorJournal] = useState([]);
+  const [inspectorAllFound, setInspectorAllFound] = useState(false);
+  const [showInspectorResult, setShowInspectorResult] = useState(false);
+  const [inspectorChoice, setInspectorChoice] = useState(null);
 
   useEffect(() => { timer.start(); console.log(`[Marshrutka] GameModal opened: ${profession}`); }, []);
 
@@ -227,29 +368,116 @@ export default function GameModal({ company, profession, onClose, showToast }) {
     setTimeout(() => { setIsProcessing(false); if (currentTaskIdx < tasks.length - 1) { setCurrentTaskIdx(prev => prev + 1); timer.start(); } else finishGame(); }, 2500);
   }, [isProcessing, currentTaskIdx, tasks, timer, submitAnswer, showToast, finishGame]);
 
+  // Inspector task 2 — проверка документов
+  const handleDocCheckComplete = useCallback((score, correct, message, foundCorrect, falseMarks) => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    setInspectorFalseTaps(prev => prev + falseMarks);
+    const timeMs = timer.stop();
+    submitAnswer(score, correct, timeMs);
+    showToast(`${message} +${score + (correct ? timeBonus(2, timeMs) : 0)} баллов`);
+    setTimeout(() => { setIsProcessing(false); if (currentTaskIdx < tasks.length - 1) { setCurrentTaskIdx(prev => prev + 1); timer.start(); } else finishGame(); }, 600);
+  }, [isProcessing, currentTaskIdx, tasks, timer, submitAnswer, showToast, finishGame]);
+
+  // Inspector task 1 — обработка кликов по зонам стены
+  const handleZoneClick = useCallback((zoneId, isDefect, defectDesc) => {
+    if (currentTaskIdx !== 0 || profession !== "inspector") return;
+    if (inspectorFoundZones.has(zoneId)) return;
+
+    const newFound = new Set(inspectorFoundZones);
+    if (isDefect) {
+      newFound.add(zoneId);
+      setInspectorFoundZones(newFound);
+      setInspectorJournal(prev => [...prev, `📍 Зона [${zoneId}]: ${defectDesc}`]);
+      const count = newFound.size;
+      showToast(`🔍 Найден дефект: ${defectDesc} (${count}/3)`, "info", 2000);
+      if (count >= 3) {
+        setInspectorAllFound(true);
+        showToast("✅ Все дефекты найдены! Завершите осмотр.", "success", 3000);
+      }
+    } else {
+      setInspectorFalseTaps(prev => prev + 1);
+      showToast("✅ Зона чистая", "info", 500);
+    }
+  }, [currentTaskIdx, profession, inspectorFoundZones, showToast]);
+
+  // Inspector task 1 — завершение осмотра
+  const finishInspection = useCallback(() => {
+    setShowInspectorResult(true);
+  }, []);
+
+  // Inspector task 1 — обработка выбора в результатах осмотра
+  const handleInspectorChoice = useCallback((choice) => {
+    setInspectorChoice(choice);
+    setShowInspectorResult(false);
+    setIsProcessing(true);
+
+    const found = inspectorFoundZones.size;
+    let score = 0;
+    let correct = false;
+    let message = "";
+
+    if (found >= 3 && choice === 1) {
+      score = 10;
+      correct = true;
+      message = "✅ +10 баллов! Предписание выдано";
+    } else if (found >= 2 && choice === 1) {
+      score = 7;
+      correct = false;
+      message = "⚠️ +7 баллов. Часть дефектов найдена";
+    } else if (found >= 3 && choice === 2) {
+      score = 5;
+      correct = false;
+      message = "⚠️ +5 баллов. Внесено в журнал";
+    } else if (choice === 3) {
+      score = 0;
+      correct = false;
+      message = "❌ Трещины в несущей стене нельзя игнорировать!";
+    } else {
+      score = 0;
+      correct = false;
+      message = "❌ Не все дефекты найдены. 0 баллов";
+    }
+
+    // Бонус за отсутствие ложных отметок
+    if (inspectorFalseTaps === 0 && score > 0) {
+      score += 3;
+      showToast("🎯 Бонус «Чистый осмотр» +3 балла!", "success");
+    }
+
+    const timeMs = timer.stop();
+    submitAnswer(score, correct, timeMs);
+    showToast(`${message} +${score + (correct ? timeBonus(1, timeMs) : 0)} баллов`);
+    setTimeout(() => {
+      setIsProcessing(false);
+      setInspectorChoice(null);
+      if (currentTaskIdx < tasks.length - 1) {
+        setCurrentTaskIdx(prev => prev + 1);
+        timer.start();
+      } else {
+        finishGame();
+      }
+    }, 600);
+  }, [inspectorFoundZones, inspectorFalseTaps, currentTaskIdx, tasks, timer, submitAnswer, showToast, finishGame]);
+
   const totalScore = taskResults.reduce((sum, r) => sum + r.score, 0);
   const maxPossible = 55;
   const currentTask = tasks[currentTaskIdx];
-  const cameraPos = profession === "foreman" ? [10, 8, 10] : profession === "energy" ? [0, 1.8, 5] : [0, 1.7, 3.5];
+  const cameraPos = profession === "foreman" ? [10, 8, 10] : profession === "energy" ? [0, 1.8, 5] : [0, 1.5, 6];
   const showInvoiceHint = currentTask?.type === "invoice" && invoiceState === "arriving";
 
   return (
     <div className="modal-backdrop open" style={{ zIndex: 300 }}>
       <div style={{ position: "fixed", inset: 0, background: "var(--bg)", zIndex: 301 }}>
         {hasWebGL && (
-          <Canvas shadows camera={{ position: cameraPos, fov: 45 }}
-            onCreated={({ camera }) => {
-              if (profession === "foreman") camera.lookAt(0, 1, 0);
-              else if (profession === "energy") camera.lookAt(0, 1.5, -1);
-              else camera.lookAt(0, 1.5, 0);
-            }}>
-            <ambientLight intensity={0.6} />
-            <Suspense fallback={null}>
-              {profession === "foreman" && <ConstructionSiteR3F taskIndex={currentTask?.id || 1} highlightZones={currentTask?.id === 2} emergencyMode={currentTask?.emergency || false} truckArrived={currentTask?.id === 1 && invoiceState !== "done"} truckDeparting={invoiceState === "departing"} wallsVisible={currentTask?.id >= 3} workerAssignments={workerAssignments} />}
-              {profession === "energy" && <DispatchRoomR3F taskIndex={currentTask?.id || 1} emergencyMode={currentTask?.emergency || false} />}
-              {profession === "inspector" && <InspectionSiteR3F taskIndex={currentTask?.id || 1} />}
-            </Suspense>
-            <OrbitControls enablePan={profession !== "inspector"} enableZoom={true} maxPolarAngle={Math.PI / 2.2} />
+            <Canvas shadows camera={{ position: cameraPos, fov: 55 }}>
+              <ambientLight intensity={1.5} />
+              <Suspense fallback={null}>
+                {profession === "foreman" && <ConstructionSiteR3F taskIndex={currentTask?.id || 1} highlightZones={currentTask?.id === 2} emergencyMode={currentTask?.emergency || false} truckArrived={currentTask?.id === 1 && invoiceState !== "done"} truckDeparting={invoiceState === "departing"} wallsVisible={currentTask?.id >= 3} workerAssignments={workerAssignments} />}
+                {profession === "energy" && <DispatchRoomR3F taskIndex={currentTask?.id || 1} emergencyMode={currentTask?.emergency || false} />}
+                {profession === "inspector" && <InspectionSiteR3F taskIndex={currentTask?.id || 1} onZoneClick={currentTask?.type === "inspection" ? handleZoneClick : undefined} />}
+              </Suspense>
+              <OrbitControls enablePan={profession !== "inspector"} enableRotate={profession !== "inspector"} enableZoom={true} target={profession === "inspector" ? [0, 1.5, 0] : [0, 0, 0]} maxPolarAngle={Math.PI / 2} />
           </Canvas>
         )}
         {showResult && (
@@ -280,10 +508,79 @@ export default function GameModal({ company, profession, onClose, showToast }) {
                 🚚 Грузовик подъезжает к площадке...
               </div>
             )}
+
+            {/* Inspector Task 1 — оверлей осмотра */}
+            {profession === "inspector" && currentTask?.type === "inspection" && !showInspectorResult && (
+              <div style={{ position: "absolute", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 315, width: "100%", maxWidth: 400, padding: "0 16px" }}>
+                <div style={{ background: "rgba(20,24,37,.95)", border: "1px solid var(--line)", borderRadius: 14, padding: 16, backdropFilter: "blur(8px)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                    <h4 style={{ fontSize: 14, fontWeight: 700 }}>🔍 РЕЖИМ ОСМОТРА</h4>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: inspectorAllFound ? "#22c55e" : "var(--muted)" }}>
+                      Найдено: <strong>{inspectorFoundZones.size}/3</strong>
+                    </span>
+                  </div>
+                  <div style={{ maxHeight: 100, overflowY: "auto", marginBottom: 10, fontSize: 12 }}>
+                    {inspectorJournal.length === 0 && <span style={{ color: "var(--muted)" }}>Кликайте по стене — ищите дефекты</span>}
+                    {inspectorJournal.map((entry, i) => (
+                      <div key={i} style={{ padding: "4px 8px", background: "rgba(34,197,94,.08)", borderRadius: 6, marginBottom: 4, fontSize: 12 }}>{entry}</div>
+                    ))}
+                  </div>
+                  <button
+                    className={`button ${inspectorAllFound ? "button-primary" : "button-ghost"} compact`}
+                    disabled={!inspectorAllFound}
+                    onClick={finishInspection}
+                    style={{ width: "100%" }}
+                  >
+                    {inspectorAllFound ? "✅ ЗАВЕРШИТЬ ОСМОТР" : `Найдено ${inspectorFoundZones.size}/3`}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Inspector Task 1 — модалка результатов осмотра */}
+            {showInspectorResult && (
+              <div style={{ position: "absolute", inset: 0, zIndex: 330, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(9,11,19,.85)" }}>
+                <div className="task-box" style={{ background: "rgba(20,24,37,.97)", border: "1px solid var(--line)", backdropFilter: "blur(8px)", maxWidth: 480, width: "90%" }}>
+                  <h3 style={{ marginBottom: 12 }}>📋 РЕЗУЛЬТАТЫ ОСМОТРА</h3>
+                  <p style={{ fontSize: 14, marginBottom: 12 }}>
+                    Найдено дефектов: <strong>{inspectorFoundZones.size}/3</strong>
+                  </p>
+                  {inspectorJournal.length > 0 && (
+                    <div style={{ marginBottom: 12, fontSize: 12 }}>
+                      {inspectorJournal.map((entry, i) => (
+                        <div key={i} style={{ padding: "4px 8px", background: "rgba(34,197,94,.08)", borderRadius: 6, marginBottom: 4 }}>{entry}</div>
+                      ))}
+                    </div>
+                  )}
+                  <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 16 }}>Ложных отметок: {inspectorFalseTaps}</p>
+                  <p style={{ fontSize: 14, marginBottom: 12 }}><strong>Что делаем с дефектами?</strong></p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+                    {[
+                      { id: 1, label: "Выдать предписание на устранение", desc: "Остановить участок на 2 часа" },
+                      { id: 2, label: "Внести в журнал, продолжить работу", desc: "Некритично, можно подождать" },
+                      { id: 3, label: "Принять работу без замечаний", desc: "Поскорее закрыть акт" },
+                    ].map(opt => (
+                      <label key={opt.id} className={`option-item ${inspectorChoice === opt.id ? "selected" : ""}`}>
+                        <input type="radio" name="inspector-choice" checked={inspectorChoice === opt.id} onChange={() => setInspectorChoice(opt.id)} />
+                        <div><strong>{opt.label}</strong><br /><small style={{ color: "var(--muted)" }}>{opt.desc}</small></div>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="modal-actions">
+                    <button className="button button-primary compact" disabled={inspectorChoice === null} onClick={() => handleInspectorChoice(inspectorChoice)}>
+                      ✅ ПРИНЯТЬ РЕШЕНИЕ
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div style={{ position: "absolute", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 320, width: "100%", maxWidth: 760, padding: "0 16px" }}>
               {currentTask?.type === "dragdrop" ? (
                 <DragDropPanel onComplete={handleDragDropComplete} onCancel={() => { showToast("Задача отменена. +0 баллов"); handleDragDropComplete(0, false, "Задача отменена", [], []); }} />
-              ) : (
+              ) : currentTask?.type === "doccheck" ? (
+                <DocCheckPanel onComplete={handleDocCheckComplete} onCancel={() => { showToast("Задача отменена. +0 баллов"); handleDocCheckComplete(0, false, "Задача отменена", 0, 0); }} />
+              ) : currentTask?.type === "inspection" ? null : (
                 <div className="task-box" style={{ background: "rgba(20,24,37,.95)", border: "1px solid var(--line)", backdropFilter: "blur(8px)" }}>
                   <b>ЗАДАЧА {currentTask?.id || 1}/3</b>
                   <p>{currentTask?.description}</p>

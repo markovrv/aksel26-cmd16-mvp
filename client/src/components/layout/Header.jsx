@@ -1,8 +1,8 @@
 import { useGameState } from "../../context/GameStateContext.jsx";
 import { trackTitle } from "../../utils/scoring.js";
 
-export default function Header({ screen, navigate, handleStart, openAvatar, showToast }) {
-  const { state, completedStationCount } = useGameState();
+export default function Header({ screen, navigate, handleStart, openAvatar, openTeacherLogin, showToast }) {
+  const { state, dispatch, completedStationCount } = useGameState();
 
   const avatarStyle = {
     "--skin": state.avatar?.skin || "#f0b38f",
@@ -38,6 +38,16 @@ export default function Header({ screen, navigate, handleStart, openAvatar, show
           <span className="mini-avatar" style={avatarStyle}></span>
           <span>{playerName}</span>
         </button>
+        {state.role !== "teacher" && (
+          <button className="button button-ghost compact" onClick={openTeacherLogin} style={{ fontSize: 11 }}>
+            🔑 Педагогу
+          </button>
+        )}
+        {state.role === "teacher" && (
+          <button className="button button-ghost compact" onClick={() => { dispatch({ type: "SET_ROLE", payload: "student" }); navigate("home"); showToast("Выход из кабинета педагога."); }} style={{ fontSize: 11 }}>
+            Выйти
+          </button>
+        )}
       </div>
     </header>
   );

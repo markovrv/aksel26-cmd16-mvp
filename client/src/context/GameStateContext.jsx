@@ -5,6 +5,7 @@ import achievements from "../data/achievements.js";
 // --- Default state ---
 const defaultState = {
   profile: null,            // { name, email, category, createdAt }
+  role: "student",          // "student" | "teacher" | "hr"
   track: null,              // null | "business" | "career"
   score: 0,
   level: "новичок",
@@ -216,6 +217,10 @@ function reducer(state, action) {
       if (!newState.achievements.includes(id)) {
         newState.achievements = [...newState.achievements, id];
       }
+      break;
+    }
+    case "SET_ROLE": {
+      newState.role = action.payload;
       break;
     }
     case "RESET_STATE": {

@@ -6,7 +6,9 @@ import RouteScreen from "./screens/RouteScreen.jsx";
 import MarketScreen from "./screens/MarketScreen.jsx";
 import ProfileScreen from "./screens/ProfileScreen.jsx";
 import GameModal from "./components/modals/GameModal.jsx";
+import TeacherScreen from "./screens/TeacherScreen.jsx";
 import RegistrationModal from "./components/modals/RegistrationModal.jsx";
+import TeacherLoginModal from "./components/modals/TeacherLoginModal.jsx";
 import TestModal from "./components/modals/TestModal.jsx";
 import AvatarModal from "./components/modals/AvatarModal.jsx";
 import StationPieceModal from "./components/modals/StationPieceModal.jsx";
@@ -98,6 +100,7 @@ export default function App() {
         navigate={navigate}
         handleStart={handleStart}
         openAvatar={() => state.profile ? openModal("avatar") : openModal("registration")}
+        openTeacherLogin={() => openModal("teacherLogin")}
         showToast={showToast}
       />
 
@@ -120,13 +123,28 @@ export default function App() {
       {screen === "market" && (
         <MarketScreen showToast={showToast} />
       )}
-      {screen === "profile" && (
-        <ProfileScreen
-          openModal={openModal}
-          openFinalResult={openFinalResult}
-          navigate={navigate}
+      {screen === "profile" && state.role === "teacher" ? (
+        <TeacherScreen openModal={openModal} showToast={showToast} />
+      ) : (
+        screen === "profile" && (
+          <ProfileScreen
+            openModal={openModal}
+            openFinalResult={openFinalResult}
+            navigate={navigate}
+          />
+        )
+      )}
+      {modal?.type === "teacherLogin" && (
+        <TeacherLoginModal
+          onClose={closeModal}
+          onComplete={() => {
+            closeModal();
+            navigate("profile");
+            showToast("Добро пожаловать в кабинет педагога.");
+          }}
         />
       )}
+
       {modal?.type === "registration" && (
         <RegistrationModal
           onClose={closeModal}
